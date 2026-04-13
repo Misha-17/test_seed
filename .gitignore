@@ -3,3 +3,4 @@ __pycache__/
 .env
 dist/
 node_modules/
+backend/db_data/
