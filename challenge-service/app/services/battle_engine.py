@@ -117,7 +117,7 @@ def resolve_turn(
         if combo_triggered:
             feedback += f" {new_streak}x combo! ×{multiplier}"
     else:
-        feedback = f'Wrong. The answer was "{question["correct_answer"]}".\'
+        feedback = "Wrong. The answer was \"" + question["correct_answer"] + "\"."
 
     ai_flavour = _ai_flavour(scenario, is_correct, battle_status)
     hand_after = _update_hand(
