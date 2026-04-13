@@ -23,3 +23,12 @@ class Quest(Base):
 
     def __repr__(self) -> str:
         return f"<Quest scenario={self.scenario} difficulty={self.difficulty:.2f}>"
+
+
+class QuestSubmission(Base):
+    __tablename__ = "quest_submissions"
+
+    quest_id:     Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    user_id:      Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    given_answer: Mapped[str] = mapped_column(String(256), nullable=False)
+    is_correct:   Mapped[bool] = mapped_column(nullable=False, default=False)
