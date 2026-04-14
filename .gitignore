@@ -4,3 +4,6 @@ __pycache__/
 dist/
 node_modules/
 backend/db_data/
+__MACOSX/
+backend/db_data/
+.env
