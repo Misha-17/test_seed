@@ -84,7 +84,7 @@ async def generate_quest(
     if not use_llm:
         content = await _pick_content(db, scenario_tag, difficulty_target)
         if content:
-            return await _build_from_wordbank(db, content)
+            return await _build_from_wordbank(db, content, user_id, scenario_tag)
 
     # Fallback: LLM generation
     return await _build_from_llm(db, scenario_tag or "general", difficulty_target or 0.3)
@@ -152,14 +152,14 @@ async def _pick_content(
     return result.scalar_one_or_none()
 
 
-async def _build_from_wordbank(db: AsyncSession, content: LanguageContent) -> Quest:
+async def _build_from_wordbank(db, content, user_id: str = "", scenario_tag:str = ""):
     """Build and persist a Quest from a LanguageContent row."""
     question_fi = content.sentence_fi.replace(content.target_fi, "....", 1)
     question_en = content.sentence_en.replace(content.target_en, "....", 1)
     options = await _build_options(db, content)
 
     quest = Quest(
-        id=uuid.uuid4(),
+        user_id=user_id,
         content_id=content.id,
         source="wordbank",
         question_fi=question_fi,
@@ -167,6 +167,8 @@ async def _build_from_wordbank(db: AsyncSession, content: LanguageContent) -> Qu
         options=options,
         correct_answer=content.target_fi.lower(),
         difficulty=content.difficulty,
+	scenario=scenario_tag or "general",
+	target_word_fi=content.target_fi
     )
     db.add(quest)
     await db.flush()
@@ -282,3 +284,33 @@ def _compute_pack_score(is_correct: bool) -> float:
     if is_correct:
         return round(random.uniform(0.50, 1.00), 4)
     return round(random.uniform(0.00, 0.40), 4)
+
+
+# ── Score quest — added for challenge tracker integration ──────────────────────
+
+async def score_quest(db, quest_id: str, given_answer: str) -> dict:
+    """Score a submitted quest answer. Raises ValueError if quest not found."""
+    import uuid as _uuid
+    from sqlalchemy import select
+    from app.models.quest import Quest
+
+    try:
+        qid = _uuid.UUID(quest_id)
+    except ValueError:
+        raise ValueError(f"Invalid quest_id: {quest_id}")
+
+    result = await db.execute(select(Quest).where(Quest.id == qid))
+    quest = result.scalar_one_or_none()
+    if quest is None:
+        raise ValueError(f"Quest {quest_id} not found.")
+
+    is_correct = quest.correct_answer.strip().lower() == given_answer.strip().lower()
+    return {
+        "quest_id":      quest_id,
+        "is_correct":    is_correct,
+        "correct_answer": quest.correct_answer,
+        "given_answer":  given_answer,
+        "xp_earned":     1 if is_correct else 0,
+        "target_word_fi": quest.target_word_fi,
+        "scenario":      quest.scenario,
+    }
