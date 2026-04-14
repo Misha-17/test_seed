@@ -84,7 +84,7 @@ async def generate_quest(
     if not use_llm:
         content = await _pick_content(db, scenario_tag, difficulty_target)
         if content:
-            return await _build_from_wordbank(db, content, user_id)
+            return await _build_from_wordbank(db, content, user_id, scenario_tag)
 
     # Fallback: LLM generation
     return await _build_from_llm(db, scenario_tag or "general", difficulty_target or 0.3)
