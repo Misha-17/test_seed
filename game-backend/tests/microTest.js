@@ -134,7 +134,10 @@ async function callQuestAdmin(token) {
     headers: authHeader,
   });
   console.log("Status:", res.statusCode);
-  console.log("Body length:", Array.isArray(res.body?.data) ? res.body.data.length : "n/a");
+  console.log(
+    "Body length:",
+    Array.isArray(res.body?.data) ? res.body.data.length : "n/a"
+  );
 }
 
 async function callCardAdmin() {
@@ -189,20 +192,28 @@ async function testQuests(token, userId) {
 
   if (!questId) {
     console.warn("No quest id from /quests/generate; skipping /quests/submit");
-    return;
+  } else {
+    console.log("\n[GAME] POST /api/quests/submit");
+    const submitReq = {
+      quest_id: questId,
+      user_id: String(userId),
+      given_answer: "test_answer", // likely incorrect, but endpoint should still work
+    };
+    res = await gameRequest({
+      method: "POST",
+      path: "/api/quests/submit",
+      headers: authHeader,
+      body: submitReq,
+    });
+    console.log("Status:", res.statusCode);
+    console.log("Body:", JSON.stringify(res.body, null, 2));
   }
 
-  console.log("\n[GAME] POST /api/quests/submit");
-  const submitReq = {
-    quest_id: questId,
-    user_id: String(userId),
-    given_answer: "test_answer", // likely incorrect, but endpoint should still work
-  };
+  console.log("\n[GAME] GET /api/quests/challenges/:userId");
   res = await gameRequest({
-    method: "POST",
-    path: "/api/quests/submit",
+    method: "GET",
+    path: `/api/quests/challenges/${userId}`,
     headers: authHeader,
-    body: submitReq,
   });
   console.log("Status:", res.statusCode);
   console.log("Body:", JSON.stringify(res.body, null, 2));
@@ -212,16 +223,104 @@ async function testCards(token, userId) {
   const authHeader = { Authorization: `Bearer ${token}` };
 
   console.log("\n[GAME] POST /api/cards/open-pack");
-  const body = {
+  const packReq = {
     user_id: String(userId),
-    pack_score: 0.7,
-    scenario_tags: null,
+    // Bias toward some scenario; can be null as well
+    scenario_bias: "cafe_intro",
   };
-  const res = await gameRequest({
+  let res = await gameRequest({
     method: "POST",
     path: "/api/cards/open-pack",
     headers: authHeader,
-    body,
+    body: packReq,
+  });
+  console.log("Status:", res.statusCode);
+  console.log("Body:", JSON.stringify(res.body, null, 2));
+
+  const packData = res.body && res.body.data;
+  const cards = (packData && packData.cards) || [];
+  const firstCard = cards[0] || {};
+  const cardScenario = firstCard.scenario || "cafe_intro";
+  const cardWordFi = firstCard.word_fi || "sana1";
+
+  console.log("\n[GAME] GET /api/cards/collection/:userId");
+  res = await gameRequest({
+    method: "GET",
+    path: `/api/cards/collection/${userId}`,
+    headers: authHeader,
+  });
+  console.log("Status:", res.statusCode);
+  console.log("Body:", JSON.stringify(res.body, null, 2));
+
+  console.log("\n[GAME] GET /api/cards/collection/:userId/scenario/:scenario");
+  res = await gameRequest({
+    method: "GET",
+    path: `/api/cards/collection/${userId}/scenario/${encodeURIComponent(
+      cardScenario
+    )}`,
+    headers: authHeader,
+  });
+  console.log("Status:", res.statusCode);
+  console.log("Body:", JSON.stringify(res.body, null, 2));
+
+  console.log("\n[GAME] POST /api/cards/xp");
+  res = await gameRequest({
+    method: "POST",
+    path: "/api/cards/xp",
+    headers: authHeader,
+    body: {
+      user_id: String(userId),
+      word_fi: cardWordFi,
+      xp: 1,
+    },
+  });
+  console.log("Status:", res.statusCode);
+  console.log("Body:", JSON.stringify(res.body, null, 2));
+
+  console.log("\n[GAME] GET /api/cards/battle-ready/:userId/:scenario");
+  res = await gameRequest({
+    method: "GET",
+    path: `/api/cards/battle-ready/${userId}/${encodeURIComponent(
+      cardScenario
+    )}`,
+    headers: authHeader,
+  });
+  console.log("Status:", res.statusCode);
+  console.log("Body:", JSON.stringify(res.body, null, 2));
+}
+
+async function testScenarios(token, userId) {
+  const authHeader = { Authorization: `Bearer ${token}` };
+
+  console.log("\n[GAME] GET /api/scenarios/unlocks/:userId");
+  let res = await gameRequest({
+    method: "GET",
+    path: `/api/scenarios/unlocks/${userId}`,
+    headers: authHeader,
+  });
+  console.log("Status:", res.statusCode);
+  console.log("Body:", JSON.stringify(res.body, null, 2));
+
+  const beatenScenario = "cafe_intro";
+
+  console.log("\n[GAME] POST /api/scenarios/unlock");
+  res = await gameRequest({
+    method: "POST",
+    path: "/api/scenarios/unlock",
+    headers: authHeader,
+    body: {
+      user_id: String(userId),
+      beaten_scenario: beatenScenario,
+    },
+  });
+  console.log("Status:", res.statusCode);
+  console.log("Body:", JSON.stringify(res.body, null, 2));
+
+  console.log("\n[GAME] GET /api/scenarios/unlocks/:userId (after unlock)");
+  res = await gameRequest({
+    method: "GET",
+    path: `/api/scenarios/unlocks/${userId}`,
+    headers: authHeader,
   });
   console.log("Status:", res.statusCode);
   console.log("Body:", JSON.stringify(res.body, null, 2));
@@ -283,10 +382,9 @@ async function testChallenges(token, userId) {
     console.log("\n[GAME] POST /api/challenges/:sessionId/pre-turn");
     res = await gameRequest({
       method: "POST",
-      path: `/api/challenges/${sessionId}/pre-turn?support_card_id=${encodeURIComponent(
-        supportCardId,
-      )}`,
+      path: `/api/challenges/${sessionId}/pre-turn`,
       headers: authHeader,
+      body: { support_card_id: supportCardId },
     });
     console.log("Status:", res.statusCode);
     console.log("Body:", JSON.stringify(res.body, null, 2));
@@ -354,7 +452,10 @@ async function run() {
     // 5) Card endpoints (card-service router)
     await testCards(token, userId);
 
-    // 6) Challenge endpoints (challenges router)
+    // 6) Scenario endpoints (scenario router)
+    await testScenarios(token, userId);
+
+    // 7) Challenge endpoints (challenges router)
     await testChallenges(token, userId);
 
     console.log("--- Test run finished ---");
