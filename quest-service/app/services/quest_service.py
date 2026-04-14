@@ -167,6 +167,8 @@ async def _build_from_wordbank(db, content, user_id: str = ""):
         options=options,
         correct_answer=content.target_fi.lower(),
         difficulty=content.difficulty,
+	scenario=scenario_tag or "general",
+	target_word_fi=content.target_fi
     )
     db.add(quest)
     await db.flush()
