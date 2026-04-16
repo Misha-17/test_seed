@@ -1,5 +1,4 @@
 services:
-
   # ── Shared database for Python microservices (lingo-db) ──────────────────────
   db:
     image: postgres:16-alpine
@@ -110,6 +109,24 @@ services:
       - lingo-net
     restart: unless-stopped
 
+  # ── Frontend (Nginx + Vite build) ───────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lingo-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      game-backend:
+        condition: service_started
+    # Allows Nginx to reach host services like backend on port 3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - lingo-net
+    restart: unless-stopped
+
   # ── Backend Postgres for Node auth API (5434) ────────────────────────────────
   backend-db:
     image: postgres:17.4
@@ -121,6 +138,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: projectdb
     ports:
+      - "5434:5432" # backend/.env expects DB_PORT=5434, DB_HOST=localhost
       - "5434:5432"
     volumes:
       - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -233,3 +251,4 @@ volumes:
 networks:
   lingo-net:
     driver: bridge
+
