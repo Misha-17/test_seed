@@ -98,6 +98,9 @@ services:
     container_name: lingo-game-backend
     env_file:
       - ./game-backend/.env.docker
+    environment:
+      # Override to talk to the backend service on the Docker network
+      AUTH_SERVICE_URL: http://backend:3000/api
     ports:
       - "4000:4000"
     depends_on:
@@ -106,6 +109,8 @@ services:
       card-service:
         condition: service_started
       challenge-service:
+        condition: service_started
+      backend:
         condition: service_started
     networks:
       - lingo-net
@@ -122,7 +127,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: projectdb
     ports:
-      - "5434:5432"   # backend/.env expects DB_PORT=5434, DB_HOST=localhost
+      - "5434:5432"   # backend/.env expects DB_PORT=5434, DB_HOST=localhost for local dev
     volumes:
       - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./backend/db_data:/var/lib/postgresql/data
@@ -133,6 +138,29 @@ services:
       retries: 5
     networks:
       - lingo-net
+
+  # ── Node Auth Backend (3000) ─────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lingo-auth-backend
+    # Reuse existing backend/.env for PORT, DB_USER, DB_PASSWORD, DB_NAME,
+    # SALT_ROUNDS, JWT_SECRET, JWT_EXPIRATION, etc. (no secrets in compose)
+    env_file:
+      - ./backend/.env
+    environment:
+      # Only override wiring so it talks to backend-db over Docker network
+      DB_HOST: backend-db
+      DB_PORT: 5432
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend-db:
+        condition: service_healthy
+    networks:
+      - lingo-net
+    restart: unless-stopped
 
 volumes:
   db-data:
