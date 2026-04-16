@@ -49,7 +49,9 @@ export async function generateQuest({ scenarioTag, difficultyTarget } = {}) {
     return normalizeQuest(res.data?.data);
   } catch (err) {
     console.log("❌ FULL ERROR:", err.response?.data);
-    console.log("❌ REAL MESSAGE:", err.response?.data?.message?.[0]); // 👈 THIS
+    console.log(
+      "❌ REAL MESSAGE:",
+      err.response?.data?.message || err.response?.data?.detail || err.message);
     throw err;
   }
 }

@@ -30,7 +30,6 @@
         }
       }
     },
-
     "/api/cards/collection/{userId}": {
       "get": {
         "summary": "Get full card collection for a user",
@@ -49,7 +48,6 @@
         }
       }
     },
-
     "/api/cards/collection/{userId}/scenario/{scenario}": {
       "get": {
         "summary": "Get card collection for a user and scenario",
@@ -74,7 +72,6 @@
         }
       }
     },
-
     "/api/cards/xp": {
       "post": {
         "summary": "Add XP to cards",
@@ -93,7 +90,6 @@
         }
       }
     },
-
     "/api/cards/battle-ready/{userId}/{scenario}": {
       "get": {
         "summary": "Get battle-ready deck for a user and scenario",
@@ -118,7 +114,6 @@
         }
       }
     },
-
     "/api/scenarios/unlocks/{userId}": {
       "get": {
         "summary": "Get unlocked scenarios for a user",
@@ -137,7 +132,6 @@
         }
       }
     },
-
     "/api/scenarios/unlock": {
       "post": {
         "summary": "Unlock a new scenario for a user",
@@ -156,7 +150,40 @@
         }
       }
     },
-
+    "/api/challenges/scenarios": {
+      "get": {
+        "summary": "Get available challenge scenarios",
+        "tags": ["Challenges"],
+        "responses": {
+          "200": {
+            "description": "Scenarios fetched",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "boolean" },
+                    "code": { "type": "integer" },
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "value": { "type": "string" },
+                          "label": { "type": "string" },
+                          "description": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/challenges/start": {
       "post": {
         "summary": "Start a new challenge battle",
@@ -175,7 +202,6 @@
         }
       }
     },
-
     "/api/challenges/{sessionId}/action": {
       "post": {
         "summary": "Submit an action for a challenge session",
@@ -202,7 +228,6 @@
         }
       }
     },
-
     "/api/challenges/{sessionId}": {
       "get": {
         "summary": "Get current state of a challenge session",
@@ -221,7 +246,6 @@
         }
       }
     },
-
     "/api/challenges/{sessionId}/pre-turn": {
       "post": {
         "summary": "Run pre-turn effects for a challenge session",
@@ -248,7 +272,6 @@
         }
       }
     },
-
     "/api/challenges/{sessionId}/hand": {
       "get": {
         "summary": "Get current hand for a challenge session",
@@ -267,7 +290,6 @@
         }
       }
     },
-
     "/api/quests/generate": {
       "post": {
         "summary": "Generate a quest",
@@ -298,7 +320,6 @@
         }
       }
     },
-
     "/api/quests/generate-internal": {
       "post": {
         "summary": "Generate an internal quest (service-to-service)",
@@ -317,7 +338,6 @@
         }
       }
     },
-
     "/api/quests/submit": {
       "post": {
         "summary": "Submit quest results for scoring",
@@ -336,7 +356,6 @@
         }
       }
     },
-
     "/api/quests/challenges/{userId}": {
       "get": {
         "summary": "Get quest-related challenges for a user",
@@ -355,7 +374,6 @@
         }
       }
     },
-
     "/api/admin/quest/health": {
       "get": {
         "summary": "Quest service health check",
@@ -365,7 +383,6 @@
         }
       }
     },
-
     "/api/admin/quest/seed": {
       "post": {
         "summary": "Seed quest service content",
@@ -376,7 +393,6 @@
         }
       }
     },
-
     "/api/admin/quest/content": {
       "get": {
         "summary": "Fetch quest service content",
@@ -387,7 +403,6 @@
         }
       }
     },
-
     "/api/admin/card/health": {
       "get": {
         "summary": "Card service health check",
@@ -397,7 +412,6 @@
         }
       }
     },
-
     "/api/admin/challenge/health": {
       "get": {
         "summary": "Challenge service health check",

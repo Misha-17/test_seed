@@ -3,33 +3,11 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   getChallengeState,
+  getChallengeScenarios,
   startChallenge,
   submitChallengeAction,
 } from "../api/challengeService";
 import { getMyCollection } from "../api/cardService";
-
-const SCENARIOS = [
-  {
-    value: "cafe_order",
-    label: "Cafe Order",
-    description: "Politeness + food vocabulary.",
-  },
-  {
-    value: "job_interview",
-    label: "Job Interview",
-    description: "Formal workplace Finnish.",
-  },
-  {
-    value: "asking_directions",
-    label: "Asking Directions",
-    description: "Navigation and location words.",
-  },
-  {
-    value: "kela_boss",
-    label: "KELA Boss",
-    description: "High-difficulty bureaucracy showdown.",
-  },
-];
 
 const STATUS_LABELS = {
   active: "In Progress",
@@ -57,7 +35,8 @@ function getErrorMessage(err, fallback) {
 const ChallengePage = () => {
   const navigate = useNavigate();
 
-  const [scenario, setScenario] = useState(SCENARIOS[0].value);
+  const [scenarios, setScenarios] = useState([]);
+  const [scenario, setScenario] = useState("");
   const [session, setSession] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [selectedCardId, setSelectedCardId] = useState("");
@@ -67,6 +46,7 @@ const ChallengePage = () => {
   const [error, setError] = useState("");
   const [cards, setCards] = useState([]);
   const [cardsLoading, setCardsLoading] = useState(true);
+  const [scenariosLoading, setScenariosLoading] = useState(true);
 
   const question = session?.next_question || null;
   const hand = Array.isArray(session?.hand) ? session.hand : [];
@@ -79,13 +59,32 @@ const ChallengePage = () => {
   }, [session?.meter_percent]);
 
   const selectedScenarioMeta =
-    SCENARIOS.find((item) => item.value === scenario) || SCENARIOS[0];
+    scenarios.find((item) => item.value === scenario) || scenarios[0] || {};
 
   const cardsByStars = useMemo(() => {
     return {
       twoPlus: cards.filter((c) => c.star_level >= 2).length,
     };
   }, [cards]);
+
+  useEffect(() => {
+    const loadScenarios = async () => {
+      try {
+        const data = await getChallengeScenarios();
+        const scenarioList = Array.isArray(data) ? data : [];
+
+        setScenarios(scenarioList);
+        setScenario((current) => current || scenarioList[0]?.value || "");
+      } catch (err) {
+        const message = getErrorMessage(err, "Could not load scenarios.");
+        setError(message);
+      } finally {
+        setScenariosLoading(false);
+      }
+    };
+
+    loadScenarios();
+  }, []);
 
   useEffect(() => {
     const loadCollection = async () => {
@@ -109,6 +108,11 @@ const ChallengePage = () => {
   };
 
   const handleStart = async () => {
+    if (!scenario) {
+      setError("No scenario available.");
+      return;
+    }
+
     setStarting(true);
     setError("");
 
@@ -242,15 +246,24 @@ const ChallengePage = () => {
                   value={scenario}
                   onChange={(e) => setScenario(e.target.value)}
                   className="mt-2 w-full bg-white border-2 border-[#d7b88b] rounded-lg px-3 py-2 text-[#40260f]"
+                  disabled={scenariosLoading || scenarios.length === 0}
                 >
-                  {SCENARIOS.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
+                  {scenarios.length === 0 ? (
+                    <option value="">
+                      {scenariosLoading
+                        ? "Loading scenarios..."
+                        : "No scenarios available"}
                     </option>
-                  ))}
+                  ) : (
+                    scenarios.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))
+                  )}
                 </select>
                 <p className="mt-2 text-sm text-[#7a5a36]">
-                  {selectedScenarioMeta.description}
+                  {selectedScenarioMeta.description || ""}
                 </p>
 
                 <div className="mt-3 bg-[#f2e6d5] border border-[#d7b88b] rounded px-2 py-2">
@@ -265,7 +278,9 @@ const ChallengePage = () => {
 
               <button
                 onClick={handleStart}
-                disabled={starting || cardsLoading}
+                disabled={
+                  starting || cardsLoading || scenariosLoading || !scenario
+                }
                 className="h-11 px-5 rounded-lg cursor-pointer bg-[#5a8b41] hover:bg-[#4f7b39] text-[#f7ffe9] font-semibold disabled:opacity-60"
               >
                 {starting ? "Starting..." : "Start Challenge"}

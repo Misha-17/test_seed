@@ -68,3 +68,8 @@ export async function getChallengeState(sessionId) {
   const res = await api.get(`/challenges/${sessionId}`);
   return unwrapPayload(res.data);
 }
+
+export async function getChallengeScenarios() {
+  const res = await api.get("/challenges/scenarios");
+  return unwrapPayload(res.data);
+}
