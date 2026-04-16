@@ -17,7 +17,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"   # Traefik API/dashboard + Prometheus metrics endpoint
+      - "8080:8080"
+      - "8082:8082"   # Traefik API/dashboard + Prometheus metrics endpoint
     networks:
       - lingo-net
 

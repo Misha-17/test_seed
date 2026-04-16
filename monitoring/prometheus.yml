@@ -7,7 +7,7 @@ scrape_configs:
   # Traefik — exposes /metrics on its internal API port (8080)
   - job_name: 'traefik'
     static_configs:
-      - targets: ['traefik:8080']
+      - targets: ['traefik:8082']
 
   # Node.js auth backend (port 3000)
   - job_name: 'backend'
